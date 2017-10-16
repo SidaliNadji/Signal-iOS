@@ -1371,7 +1371,6 @@ typedef NS_ENUM(NSInteger, MessagesRangeSizeMode) {
 
 #pragma mark - Dynamic Text
 
-// TODO: Fix this.
 /**
  Called whenever the user manually changes the dynamic type options inside Settings.
 
@@ -2787,6 +2786,11 @@ typedef NS_ENUM(NSInteger, MessagesRangeSizeMode) {
         // may need to extend the mapping's contents to reflect the current
         // range.
         [self updateMessageMappingRangeOptions:MessagesRangeSizeMode_Normal];
+        // Calling resetContentAndLayout is a bit expensive.
+        // Since by definition this won't affect any cells in the previous
+        // range, it should be sufficient to call invalidateLayout.
+        //
+        // TODO: Investigate whether we can just call invalidateLayout.
         [self resetContentAndLayout];
         return;
     }
