@@ -329,8 +329,11 @@ typedef NS_ENUM(NSInteger, MessagesRangeSizeMode) {
             [self setNavigationTitle];
         }
 
-        // Reload all cells.
-        [self resetContentAndLayout];
+        if (self.isGroupConversation) {
+            // Reload all cells if this is a group conversation,
+            // since we may need to update the sender names on the messages.
+            [self resetContentAndLayout];
+        }
     }
 }
 
@@ -634,10 +637,8 @@ typedef NS_ENUM(NSInteger, MessagesRangeSizeMode) {
 - (void)resetContentAndLayout
 {
     // Avoid layout corrupt issues and out-of-date message subtitles.
-    [self.collectionView.collectionViewLayout
-        invalidateLayoutWithContext:[JSQMessagesCollectionViewFlowLayoutInvalidationContext context]];
+    [self.collectionView.collectionViewLayout invalidateLayout];
     [self.collectionView reloadData];
-
     // TODO: Should we evacuate cached cell sizes here?
 }
 
@@ -1378,9 +1379,14 @@ typedef NS_ENUM(NSInteger, MessagesRangeSizeMode) {
  */
 - (void)didChangePreferredContentSize:(NSNotification *)notification
 {
-    //    [self.collectionView.collectionViewLayout setMessageBubbleFont:[UIFont ows_dynamicTypeBodyFont]];
+    DDLogInfo(@"%@ didChangePreferredContentSize", self.tag);
+
+    // Evacuate cached cell sizes.
+    for (ConversationViewItem *viewItem in self.viewItems) {
+        [viewItem clearCachedLayoutState];
+    }
     [self resetContentAndLayout];
-    //    [self reloadInputToolbarSizeIfNeeded];
+    [self.inputToolbar updateFontSizes];
 }
 
 #pragma mark - Actions
@@ -3567,7 +3573,6 @@ typedef NS_ENUM(NSInteger, MessagesRangeSizeMode) {
     [groupMemberIds addObject:[TSAccountManager localNumber]];
     groupModel.groupMemberIds = [NSMutableArray arrayWithArray:[groupMemberIds allObjects]];
     [self updateGroupModelTo:groupModel successCompletion:nil];
-    [self resetContentAndLayout];
 }
 
 - (void)popAllConversationSettingsViews
@@ -3656,18 +3661,10 @@ typedef NS_ENUM(NSInteger, MessagesRangeSizeMode) {
         [self toggleDefaultKeyboard];
     }
     [self clearDraft];
-    [self finishSendingMessage];
+    [self.inputToolbar clearTextMessage];
     if (didAddToProfileWhitelist) {
         [self ensureDynamicInteractions];
     }
-}
-
-- (void)finishSendingMessage
-{
-    [self.inputToolbar clearTextMessage];
-    [self.collectionView.collectionViewLayout
-        invalidateLayoutWithContext:[JSQMessagesCollectionViewFlowLayoutInvalidationContext context]];
-    [self.collectionView reloadData];
 }
 
 - (void)voiceMemoGestureDidStart

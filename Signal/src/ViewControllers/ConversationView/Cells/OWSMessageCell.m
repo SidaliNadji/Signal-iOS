@@ -125,7 +125,8 @@ NS_ASSUME_NONNULL_BEGIN
     [self.bubbleImageView autoPinToSuperviewEdges];
 
     self.textLabel = [UILabel new];
-    self.textLabel.font = [UIFont ows_regularFontWithSize:16.f];
+    // Honor dynamic type in the message bodies.
+    self.textLabel.font = [self textMessageFont];
     self.textLabel.numberOfLines = 0;
     self.textLabel.lineBreakMode = NSLineBreakByWordWrapping;
     self.textLabel.textAlignment = NSTextAlignmentLeft;
@@ -161,6 +162,11 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSString *)cellReuseIdentifier
 {
     return NSStringFromClass([self class]);
+}
+
+- (UIFont *)textMessageFont
+{
+    return [UIFont ows_dynamicTypeBodyFont];
 }
 
 - (OWSMessageCellType)cellType
@@ -544,6 +550,7 @@ NS_ASSUME_NONNULL_BEGIN
     self.bubbleImageView.hidden = NO;
     self.textLabel.hidden = NO;
     self.textLabel.text = self.textMessage;
+    self.textLabel.font = [self textMessageFont];
     self.textLabel.textColor = [self textColor];
 
     self.contentConstraints = @[
@@ -724,6 +731,7 @@ NS_ASSUME_NONNULL_BEGIN
             const int maxTextWidth = (int)floor(maxMessageWidth - (leftMargin + rightMargin));
 
             self.textLabel.text = self.textMessage;
+            self.textLabel.font = [self textMessageFont];
             CGSize textSize = [self.textLabel sizeThatFits:CGSizeMake(maxTextWidth, CGFLOAT_MAX)];
             cellSize = CGSizeMake((CGFloat)ceil(textSize.width + leftMargin + rightMargin),
                 (CGFloat)ceil(textSize.height + textVMargin * 2));
